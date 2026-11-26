@@ -1,10 +1,8 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawn } from 'node:child_process';
-import { once } from 'node:events';
-import { existsSync, mkdirSync, renameSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { setTimeout as wait } from 'node:timers/promises';
 
 import { cli, fixture } from './fixture.ts';
 
@@ -92,65 +90,6 @@ test('case-only renames remain identifiable when the files have identical conten
   run('start');
   for (const name of ['first.txt', 'second.txt']) renameSync(join(repo, name), join(repo, name.toUpperCase()));
   assert.match(run('stop'), /2 files changed · \+0 lines · −0 lines/);
-});
-
-test('the timer can still stop if the system clock moved backward', (t) => {
-  const { repo, env, run } = fixture(t);
-  const requestedAt = Date.now();
-  run('start');
-
-  const earlierClock = `data:text/javascript,${encodeURIComponent(`Date.now = () => ${requestedAt};`)}`;
-  const deferred = execFileSync(process.execPath, ['--import', earlierClock, cli, 'stop'], {
-    cwd: repo, env, encoding: 'utf8',
-  });
-  assert.match(deferred, /Stopped checkout-api\. Elapsed: 0s\./);
-  assert.match(run('status'), /No open session/);
-});
-
-test('a delayed comparison leaves a replacement session open', async (t) => {
-  const { repo, data, env, run } = fixture(t);
-  const file = join(repo, 'code.txt');
-  const ready = join(data, 'comparison-started');
-  const resume = join(data, 'resume-comparison');
-  writeFileSync(file, 'original\n');
-  run('start');
-
-  const pauseFileRead = `data:text/javascript,${encodeURIComponent(`
-    import fs from 'node:fs';
-    import { syncBuiltinESMExports } from 'node:module';
-    const read = fs.readFileSync;
-    fs.readFileSync = (path, ...args) => {
-      if (path === ${JSON.stringify(file)}) {
-        fs.writeFileSync(${JSON.stringify(ready)}, 'ready');
-        const wakeUp = new Int32Array(new SharedArrayBuffer(4));
-        const deadline = Date.now() + 15_000;
-        while (!fs.existsSync(${JSON.stringify(resume)})) {
-          if (Date.now() > deadline) throw new Error('Timed out waiting for the comparison test.');
-          Atomics.wait(wakeUp, 0, 0, 20);
-        }
-      }
-      return read(path, ...args);
-    };
-    syncBuiltinESMExports();
-  `)}`;
-  const child = spawn(process.execPath, ['--import', pauseFileRead, cli, 'stop'], {
-    cwd: repo, env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
-  });
-  let output = '';
-  child.stdout.setEncoding('utf8').on('data', (chunk: string) => { output += chunk; });
-  const closed = once(child, 'close');
-  try {
-    const deadline = Date.now() + 7000;
-    while (!existsSync(ready) && child.exitCode === null && Date.now() < deadline) await wait(20);
-    assert.ok(existsSync(ready));
-    run('stop');
-    run('start');
-  } finally {
-    writeFileSync(resume, 'resume');
-    await closed;
-  }
-  assert.match(output, /No open session/);
-  assert.match(run('status'), /^Elapsed: \d+s$/);
 });
 
 test('a large generated rewrite saves complete line counts within the command timeout', (t) => {

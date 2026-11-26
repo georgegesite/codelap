@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { formatRecordedTime } from './activity.ts';
-import { currentRepository } from './repository.ts';
-import { ActivityStore } from './store.ts';
+import { CodingSessions } from './session.ts';
 
 function count(value: number, noun: string): string {
   return `${value} ${noun}${value === 1 ? '' : 's'}`;
@@ -24,30 +23,25 @@ async function run(args: string[]): Promise<void> {
     throw new Error(usage);
   }
 
-  const requestedAt = Date.now();
-  const repository = currentRepository(process.cwd());
-  const store = new ActivityStore();
-  try {
-    if (command === 'start') {
-      const { session, started } = store.start(repository);
-      const startTime = new Date(session.startedAt).toISOString();
-      console.log(started ? `Started ${repository.name} at ${startTime}.`
-        : `${repository.name} already has a session started at ${startTime}.`);
-    } else if (command === 'status') {
-      const session = store.getOpenSession(repository);
-      console.log(session ? `Elapsed: ${formatRecordedTime(session.startedAt, requestedAt)}`
-        : `No open session in ${repository.name}.`);
+  const cwd = process.cwd();
+  const sessions = new CodingSessions();
+  if (command === 'start') {
+    const { repositoryName, session, started } = sessions.start(cwd);
+    const startTime = new Date(session.startedAt).toISOString();
+    console.log(started ? `Started ${repositoryName} at ${startTime}.`
+      : `${repositoryName} already has a session started at ${startTime}.`);
+  } else if (command === 'status') {
+    const { repositoryName, recording } = sessions.status(cwd);
+    console.log(recording ? `Elapsed: ${formatRecordedTime(recording.startedAt, recording.checkedAt)}`
+      : `No open session in ${repositoryName}.`);
+  } else {
+    const { repositoryName, recap } = sessions.stop(cwd);
+    if (recap) {
+      console.log(`Stopped ${repositoryName}. Elapsed: ${formatRecordedTime(recap.startedAt, recap.stoppedAt)}.`);
+      console.log(`${count(recap.filesChanged, 'file')} changed · +${count(recap.linesAdded, 'line')} · −${count(recap.linesRemoved, 'line')}`);
     } else {
-      const recap = store.stop(repository, requestedAt);
-      if (recap) {
-        console.log(`Stopped ${repository.name}. Elapsed: ${formatRecordedTime(recap.startedAt, recap.stoppedAt)}.`);
-        console.log(`${count(recap.filesChanged, 'file')} changed · +${count(recap.linesAdded, 'line')} · −${count(recap.linesRemoved, 'line')}`);
-      } else {
-        console.log(`No open session in ${repository.name}.`);
-      }
+      console.log(`No open session in ${repositoryName}.`);
     }
-  } finally {
-    store.close();
   }
 }
 
