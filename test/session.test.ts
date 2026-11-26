@@ -114,6 +114,20 @@ test('a failure releasing the baseline rolls back the Recap and permits retry', 
   }
 });
 
+test('Session Changes exclude Activity History stored inside the Session Repository', (t) => {
+  const { repo } = fixture(t);
+  const sessions = new CodingSessions({ dataDirectory: join(repo, 'activity-data') });
+  const file = join(repo, 'code.txt');
+  writeFileSync(file, 'original\n');
+
+  sessions.start(repo);
+  writeFileSync(file, 'original\nnew work\n');
+
+  const { recap } = sessions.stop(repo);
+  assert.ok(recap);
+  assert.deepEqual(recap.files, [{ path: 'code.txt', added: 1, removed: 0 }]);
+});
+
 test('Recorded Time starts after baseline capture and ends when stop is requested', (t) => {
   const { repo, data } = fixture(t);
   let now = 1000;
