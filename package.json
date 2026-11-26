@@ -1,0 +1,27 @@
+{
+  "name": "coding-activity",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "coding-activity": "dist/cli.js"
+  },
+  "files": ["dist", "assets"],
+  "engines": {
+    "node": ">=24.12.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
+    "test": "node --test \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.4",
+    "typescript": "7.0.2"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "1.2.1",
+    "diff": "9.0.0"
+  }
+}
