@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, realpathSync } from 'node:fs';
+import { existsSync, mkdirSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -42,17 +42,27 @@ const summaryColumns = `
   files_changed AS filesChanged, lines_added AS linesAdded, lines_removed AS linesRemoved
 `;
 
+const databaseName = 'activity.sqlite';
+
+function defaultDataDirectory(): string {
+  const localAppData = process.env.LOCALAPPDATA;
+  const parent = localAppData || homedir();
+  const directory = join(parent, localAppData ? 'CodeLap' : '.codelap');
+  const legacy = join(parent, localAppData ? 'CodingActivity' : '.coding-activity');
+  if (!existsSync(join(directory, databaseName)) && existsSync(join(legacy, databaseName))) {
+    return legacy;
+  }
+  return directory;
+}
+
 export class ActivityStore {
   readonly snapshotExclusions: ReadonlySet<string>;
   private readonly db: DatabaseSync;
 
-  constructor(dataDirectory = process.env.CODING_ACTIVITY_DATA_DIR) {
-    const defaultDirectory = process.env.LOCALAPPDATA
-      ? join(process.env.LOCALAPPDATA, 'CodingActivity')
-      : join(homedir(), '.coding-activity');
-    const directory = resolve(dataDirectory || defaultDirectory);
+  constructor(dataDirectory = process.env.CODELAP_DATA_DIR || process.env.CODING_ACTIVITY_DATA_DIR) {
+    const directory = resolve(dataDirectory || defaultDataDirectory());
     mkdirSync(directory, { recursive: true, mode: 0o700 });
-    const database = join(realpathSync.native(directory), 'activity.sqlite');
+    const database = join(realpathSync.native(directory), databaseName);
     this.snapshotExclusions = new Set(['', '-journal', '-wal', '-shm'].map((suffix) => database + suffix));
     this.db = new DatabaseSync(database, { timeout: 5000 });
     try {

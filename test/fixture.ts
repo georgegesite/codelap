@@ -8,13 +8,13 @@ import { fileURLToPath } from 'node:url';
 export const cli = fileURLToPath(new URL('../src/cli.ts', import.meta.url));
 
 export function fixture(test: TestContext, name = 'checkout-api') {
-  const temporary = mkdtempSync(join(tmpdir(), 'coding-activity-test-'));
+  const temporary = mkdtempSync(join(tmpdir(), 'codelap-test-'));
   test.after(() => rmSync(temporary, { recursive: true, force: true, maxRetries: 4 }));
 
   const repo = join(temporary, name);
   const data = join(temporary, 'activity-data');
   mkdirSync(repo);
-  const env = { ...process.env, CODING_ACTIVITY_DATA_DIR: data };
+  const env = { ...process.env, CODELAP_DATA_DIR: data };
 
   const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' });
   git('init', '--quiet', '-b', 'main');

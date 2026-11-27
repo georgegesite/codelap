@@ -6,7 +6,7 @@ function count(value: number, noun: string): string {
   return `${value} ${noun}${value === 1 ? '' : 's'}`;
 }
 
-const usage = 'Usage: coding-activity <start | status | stop | dashboard [--no-open]>';
+const usage = 'Usage: codelap <start | status | stop | dashboard [--no-open]>';
 
 async function run(args: string[]): Promise<void> {
   const [command] = args;

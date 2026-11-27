@@ -1,4 +1,4 @@
-# Coding Activity
+# CodeLap
 
 This context describes how developers record coding sessions and review their activity over time.
 

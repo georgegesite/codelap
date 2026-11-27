@@ -1,4 +1,4 @@
-# Coding Activity Tracker V1 Design
+# CodeLap V1 Design
 
 Record a coding session from a Git repository, revisit it in a private activity history, and export a PNG to share. The first supported environment is Windows with PowerShell and Git.
 

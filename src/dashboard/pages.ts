@@ -20,13 +20,13 @@ function layout(title: string, body: string): string {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${htmlText(title)} | Coding Activity</title>
+    <title>${htmlText(title)} | CodeLap</title>
     <link rel="stylesheet" href="/dashboard.css">
   </head>
   <body>
     <header class="masthead">
       <div class="shell masthead-inner">
-        <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">›_</span>Coding Activity</a>
+        <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">›_</span>CodeLap</a>
         <span class="local-label">On this device</span>
       </div>
     </header>
@@ -64,7 +64,7 @@ export function historyPage(sessions: SessionSummary[]): string {
       </table>
     </section>` : `<section class="panel empty-state">
       <h2>No sessions yet</h2>
-      <p>Run <code>coding-activity start</code> in a Git repository. When you finish, run <code>coding-activity stop</code> to save the session here.</p>
+      <p>Run <code>codelap start</code> in a Git repository. When you finish, run <code>codelap stop</code> to save the session here.</p>
     </section>`}
   `);
 }
